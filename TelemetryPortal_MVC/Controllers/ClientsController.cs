@@ -3,26 +3,26 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using TelemetryPortal_MVC.Data;
 using TelemetryPortal_MVC.Models;
+using TelemetryPortal_MVC.Repositories; // Assuming you will create this namespace
 
 namespace TelemetryPortal_MVC.Controllers
 {
     public class ClientsController : Controller
     {
-        private readonly TechtrendsContext _context;
+        private readonly ClientRepository _clientRepository;
 
-        public ClientsController(TechtrendsContext context)
+        public ClientsController(ClientRepository clientRepository)
         {
-            _context = context;
+            _clientRepository = clientRepository;
         }
 
         // GET: Clients
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Clients.ToListAsync());
+            var clients = await _clientRepository.GetAllClientsAsync();
+            return View(clients);
         }
 
         // GET: Clients/Details/5
@@ -33,8 +33,7 @@ namespace TelemetryPortal_MVC.Controllers
                 return NotFound();
             }
 
-            var client = await _context.Clients
-                .FirstOrDefaultAsync(m => m.ClientId == id);
+            var client = await _clientRepository.GetClientByIdAsync(id.Value);
             if (client == null)
             {
                 return NotFound();
@@ -50,8 +49,6 @@ namespace TelemetryPortal_MVC.Controllers
         }
 
         // POST: Clients/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("ClientId,ClientName,PrimaryContactEmail,DateOnboarded")] Client client)
@@ -59,8 +56,7 @@ namespace TelemetryPortal_MVC.Controllers
             if (ModelState.IsValid)
             {
                 client.ClientId = Guid.NewGuid();
-                _context.Add(client);
-                await _context.SaveChangesAsync();
+                await _clientRepository.AddClientAsync(client);
                 return RedirectToAction(nameof(Index));
             }
             return View(client);
@@ -74,7 +70,7 @@ namespace TelemetryPortal_MVC.Controllers
                 return NotFound();
             }
 
-            var client = await _context.Clients.FindAsync(id);
+            var client = await _clientRepository.GetClientByIdAsync(id.Value);
             if (client == null)
             {
                 return NotFound();
@@ -83,8 +79,6 @@ namespace TelemetryPortal_MVC.Controllers
         }
 
         // POST: Clients/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(Guid id, [Bind("ClientId,ClientName,PrimaryContactEmail,DateOnboarded")] Client client)
@@ -98,12 +92,11 @@ namespace TelemetryPortal_MVC.Controllers
             {
                 try
                 {
-                    _context.Update(client);
-                    await _context.SaveChangesAsync();
+                    await _clientRepository.UpdateClientAsync(client);
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!ClientExists(client.ClientId))
+                    if (!await _clientRepository.ClientExistsAsync(client.ClientId))
                     {
                         return NotFound();
                     }
@@ -125,8 +118,7 @@ namespace TelemetryPortal_MVC.Controllers
                 return NotFound();
             }
 
-            var client = await _context.Clients
-                .FirstOrDefaultAsync(m => m.ClientId == id);
+            var client = await _clientRepository.GetClientByIdAsync(id.Value);
             if (client == null)
             {
                 return NotFound();
@@ -140,19 +132,8 @@ namespace TelemetryPortal_MVC.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(Guid id)
         {
-            var client = await _context.Clients.FindAsync(id);
-            if (client != null)
-            {
-                _context.Clients.Remove(client);
-            }
-
-            await _context.SaveChangesAsync();
+            await _clientRepository.DeleteClientAsync(id);
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool ClientExists(Guid id)
-        {
-            return _context.Clients.Any(e => e.ClientId == id);
         }
     }
 }
