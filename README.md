@@ -29,7 +29,7 @@ Before i started i ensure the following
 - **Controllers**: Contains the MVC controllers handling HTTP requests.
 - **Repositories**: Contains repository classes for data access.
 - **Models**: Contains the data models used throughout the application.
-- **Views**: Contains Razor views for the UI.
+- **Views**: Contains html and css code for views for the UI.
 - **appsettings.json**: Configuration file for database connection strings and other settings.
 
 ## Contact
